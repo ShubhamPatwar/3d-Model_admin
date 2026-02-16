@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Upload - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    
+    <!-- Login Screen -->
+    <div id="loginScreen" class="flex items-center justify-center min-h-screen p-8">
+        <div class="bg-gray-800 rounded-lg p-8 shadow-xl max-w-md w-full">
+            <h1 class="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+                Admin Access
+            </h1>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Password</label>
+                    <input type="password" id="password" class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Enter admin password">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-6 rounded-lg transition-all">
+                    Login
+                </button>
+                <p id="loginError" class="text-red-400 text-sm text-center hidden">Incorrect password</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Admin Panel (Hidden by default) -->
+    <div id="adminPanel" class="hidden p-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+                    3D Model Upload Admin
+                </h1>
+                <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm">
+                    Logout
+                </button>
+            </div>
+
+            <div class="bg-gray-800 rounded-lg p-8 shadow-xl mb-8">
+                <h2 class="text-2xl font-semibold mb-6">AWS S3 Configuration</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Access Key ID</label>
+                        <input type="text" id="accessKeyId" class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Your AWS Access Key">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Secret Access Key</label>
+                        <input type="password" id="secretAccessKey" class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Your AWS Secret Key">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Bucket Name</label>
+                        <input type="text" id="bucketName" value="my-3d-models-shop" class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Region</label>
+                        <input type="text" id="region" value="ap-southeast-2" class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                    </div>
+                </div>
+                <p class="text-sm text-gray-400">⚠️ AWS credentials are stored only in your browser session and never sent anywhere.</p>
+            </div>
+
+            <form id="modelForm" class="bg-gray-800 rounded-lg p-8 shadow-xl">
+                <h2 class="text-2xl font-semibold mb-6">Model Information</h2>
+                
+                <!-- Basic Info -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Model Name *</label>
+                        <input type="text" id="name" required class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Cyber Sports Car">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Price (USD) *</label>
+                        <input type="number" id="price" step="0.01" required class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" placeholder="49.99">
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Category *</label>
+                    <select id="category" required class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                        <option value="">Select Category</option>
+                        <option value="cars">Cars</option>
+                        <option value="weapons">Weapons</option>
+                        <option value="buildings">Buildings</option>
+                        <option value="characters">Characters</option>
+                        <option value="props">Props</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Short Description *</label>
+                    <input type="text" id="shortDescription" required class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Futuristic sports car with cyberpunk aesthetics">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Full Description *</label>
+                    <textarea id="description" required rows="4" class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" placeholder="A futuristic sports car with sleek aerodynamic design..."></textarea>
+                </div>
+
+                <!-- Tech Details -->
+                <h3 class="text-xl font-semibold mb-4 mt-8">Technical Details</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Format</label>
+                        <input type="text" id="format" value="GLB, FBX" class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Poly Count</label>
+                        <input type="text" id="polyCount" placeholder="45,000 tris" class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Textures</label>
+                        <input type="text" id="textures" value="4K PBR" class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">File Size (will auto-calculate)</label>
+                        <input type="text" id="fileSize" placeholder="85 MB" class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="flex gap-4 mb-6">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="rigged" class="w-5 h-5">
+                        <span>Rigged</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="animated" class="w-5 h-5">
+                        <span>Animated</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="featured" class="w-5 h-5">
+                        <span>Featured</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="new" class="w-5 h-5">
+                        <span>New</span>
+                    </label>
+                </div>
+
+                <!-- File Uploads -->
+                <h3 class="text-xl font-semibold mb-4 mt-8">File Uploads</h3>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">3D Model File (.glb) *</label>
+                    <input type="file" id="modelFile" accept=".glb" required class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700">
+                    <p class="text-sm text-gray-400 mt-1">Upload your .glb model file</p>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Thumbnail Image *</label>
+                    <input type="file" id="thumbnailFile" accept="image/*" required class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Additional Images (up to 3)</label>
+                    <input type="file" id="additionalImages" accept="image/*" multiple class="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700">
+                    <p class="text-sm text-gray-400 mt-1">Select 1-3 images</p>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105">
+                    Upload to S3 & Generate Code
+                </button>
+
+                <div id="progress" class="hidden mt-4">
+                    <div class="bg-gray-700 rounded-full h-4 overflow-hidden">
+                        <div id="progressBar" class="bg-gradient-to-r from-purple-600 to-pink-600 h-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <p id="progressText" class="text-center mt-2 text-sm"></p>
+                </div>
+            </form>
+
+            <!-- Generated Code Output -->
+            <div id="outputSection" class="hidden mt-8 bg-gray-800 rounded-lg p-8 shadow-xl">
+                <h2 class="text-2xl font-semibold mb-4">Generated TypeScript Code</h2>
+                <p class="text-gray-400 mb-4">Copy this code and add it to your <code class="bg-gray-700 px-2 py-1 rounded">models.ts</code> file:</p>
+                
+                <div class="relative">
+                    <pre id="generatedCode" class="bg-gray-900 p-6 rounded-lg overflow-x-auto text-sm"><code></code></pre>
+                    <button onclick="copyCode()" class="absolute top-4 right-4 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm">
+                        Copy Code
+                    </button>
+                </div>
+
+                <div class="mt-6 p-4 bg-green-900/50 border border-green-500 rounded-lg">
+                    <h3 class="font-semibold text-green-400 mb-2">✅ Success! Files uploaded to S3:</h3>
+                    <ul id="uploadedFiles" class="text-sm space-y-1 text-gray-300"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AWS SDK -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1000.0.min.js"></script>
+    
+    <script>
+        // Password protection
+        const ADMIN_PASSWORD = 'admin123'; // CHANGE THIS PASSWORD!
+
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            
+            if (password === ADMIN_PASSWORD) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('adminPanel').classList.remove('hidden');
+                sessionStorage.setItem('adminLoggedIn', 'true');
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        });
+
+        function logout() {
+            sessionStorage.removeItem('adminLoggedIn');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('password').value = '';
+        }
+
+        // Check if already logged in
+        if (sessionStorage.getItem('adminLoggedIn') === 'true') {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+        }
+
+        let uploadedUrls = {
+            modelUrl: '',
+            thumbnailUrl: '',
+            imageUrls: []
+        };
+
+        function generateSlug(name) {
+            return name.toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '');
+        }
+
+        function generateId() {
+            return Date.now().toString().slice(-6);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        async function uploadToS3(file, fileName, progressCallback) {
+            const accessKeyId = document.getElementById('accessKeyId').value;
+            const secretAccessKey = document.getElementById('secretAccessKey').value;
+            const bucketName = document.getElementById('bucketName').value;
+            const region = document.getElementById('region').value;
+
+            if (!accessKeyId || !secretAccessKey) {
+                throw new Error('Please enter AWS credentials');
+            }
+
+            AWS.config.update({
+                accessKeyId: accessKeyId,
+                secretAccessKey: secretAccessKey,
+                region: region
+            });
+
+            const s3 = new AWS.S3();
+            
+            const params = {
+                Bucket: bucketName,
+                Key: fileName,
+                Body: file,
+                ContentType: file.type,
+                ACL: 'public-read'
+            };
+
+            return new Promise((resolve, reject) => {
+                s3.upload(params)
+                    .on('httpUploadProgress', (progress) => {
+                        const percentage = Math.round((progress.loaded / progress.total) * 100);
+                        if (progressCallback) progressCallback(percentage);
+                    })
+                    .send((err, data) => {
+                        if (err) reject(err);
+                        else resolve(data.Location);
+                    });
+            });
+        }
+
+        function updateProgress(percentage, text) {
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = text;
+        }
+
+        function generateTypeScriptCode(formData, urls) {
+            const slug = generateSlug(formData.name);
+            const id = generateId();
+            
+            const techDetails = {
+                format: formData.format,
+                polyCount: formData.polyCount,
+                textures: formData.textures,
+                fileSize: formData.fileSize,
+            };
+
+            if (formData.rigged) techDetails.rigged = true;
+            if (formData.animated) techDetails.animated = true;
+
+            const code = `{
+  id: '${id}',
+  name: '${formData.name}',
+  slug: '${slug}',
+  price: ${formData.price},
+  category: '${formData.category}',
+  description: '${formData.description}',
+  shortDescription: '${formData.shortDescription}',
+  thumbnail: '${urls.thumbnailUrl}',
+  images: [${urls.imageUrls.map(url => `'${url}'`).join(', ')}],
+  modelUrl: '${urls.modelUrl}',
+  techDetails: ${JSON.stringify(techDetails, null, 4).replace(/"([^"]+)":/g, '$1:')},${formData.featured ? '\n  featured: true,' : ''}${formData.new ? '\n  new: true,' : ''}
+}`;
+
+            return code;
+        }
+
+        function copyCode() {
+            const code = document.getElementById('generatedCode').textContent;
+            navigator.clipboard.writeText(code);
+            alert('Code copied to clipboard!');
+        }
+
+        document.getElementById('modelForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const progress = document.getElementById('progress');
+            const outputSection = document.getElementById('outputSection');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Uploading...';
+            progress.classList.remove('hidden');
+            outputSection.classList.add('hidden');
+
+            try {
+                // Collect form data
+                const formData = {
+                    name: document.getElementById('name').value,
+                    price: parseFloat(document.getElementById('price').value),
+                    category: document.getElementById('category').value,
+                    shortDescription: document.getElementById('shortDescription').value,
+                    description: document.getElementById('description').value,
+                    format: document.getElementById('format').value,
+                    polyCount: document.getElementById('polyCount').value,
+                    textures: document.getElementById('textures').value,
+                    fileSize: document.getElementById('fileSize').value,
+                    rigged: document.getElementById('rigged').checked,
+                    animated: document.getElementById('animated').checked,
+                    featured: document.getElementById('featured').checked,
+                    new: document.getElementById('new').checked,
+                    additionalImages: []
+                };
+
+                const slug = generateSlug(formData.name);
+                const modelFile = document.getElementById('modelFile').files[0];
+                const thumbnailFile = document.getElementById('thumbnailFile').files[0];
+                const additionalImagesFiles = document.getElementById('additionalImages').files;
+
+                // Calculate actual file size if not provided
+                if (!formData.fileSize && modelFile) {
+                    formData.fileSize = formatFileSize(modelFile.size);
+                }
+
+                // Upload model file
+                updateProgress(10, 'Uploading 3D model...');
+                uploadedUrls.modelUrl = await uploadToS3(
+                    modelFile, 
+                    `models/${slug}.glb`,
+                    (percent) => updateProgress(10 + percent * 0.4, `Uploading model: ${percent}%`)
+                );
+
+                // Upload thumbnail
+                updateProgress(50, 'Uploading thumbnail...');
+                uploadedUrls.thumbnailUrl = await uploadToS3(
+                    thumbnailFile,
+                    `images/${slug}-thumbnail.${thumbnailFile.name.split('.').pop()}`,
+                    (percent) => updateProgress(50 + percent * 0.2, `Uploading thumbnail: ${percent}%`)
+                );
+
+                // Upload additional images
+                uploadedUrls.imageUrls = [uploadedUrls.thumbnailUrl]; // Include thumbnail as first image
+                
+                if (additionalImagesFiles.length > 0) {
+                    updateProgress(70, 'Uploading additional images...');
+                    for (let i = 0; i < Math.min(additionalImagesFiles.length, 3); i++) {
+                        const file = additionalImagesFiles[i];
+                        const url = await uploadToS3(
+                            file,
+                            `images/${slug}-${i + 1}.${file.name.split('.').pop()}`,
+                            (percent) => updateProgress(70 + (i + 1) * 10, `Uploading image ${i + 1}: ${percent}%`)
+                        );
+                        uploadedUrls.imageUrls.push(url);
+                        formData.additionalImages.push(url);
+                    }
+                }
+
+                updateProgress(100, 'Complete! Generating code...');
+
+                // Generate TypeScript code
+                const tsCode = generateTypeScriptCode(formData, urls);
+                document.getElementById('generatedCode').textContent = tsCode;
+
+                // Show uploaded files
+                const filesList = document.getElementById('uploadedFiles');
+                filesList.innerHTML = `
+                    <li>🎨 Model: <a href="${uploadedUrls.modelUrl}" target="_blank" class="text-purple-400 hover:underline">${uploadedUrls.modelUrl}</a></li>
+                    <li>🖼️ Thumbnail: <a href="${uploadedUrls.thumbnailUrl}" target="_blank" class="text-purple-400 hover:underline">${uploadedUrls.thumbnailUrl}</a></li>
+                    ${uploadedUrls.imageUrls.slice(1).map((url, i) => 
+                        `<li>📸 Image ${i + 1}: <a href="${url}" target="_blank" class="text-purple-400 hover:underline">${url}</a></li>`
+                    ).join('')}
+                `;
+
+                outputSection.classList.remove('hidden');
+                submitBtn.textContent = 'Upload Another Model';
+                
+                // Scroll to output
+                outputSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (error) {
+                alert('Error: ' + error.message);
+                console.error(error);
+                updateProgress(0, 'Error occurred');
+            } finally {
+                submitBtn.disabled = false;
+                setTimeout(() => {
+                    progress.classList.add('hidden');
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+</html>
